@@ -1,0 +1,11 @@
+{
+  "establecimientos": [
+    {"id": "HOSP-001", "nombre": "Hospital Edgardo Rebagliati Martins", "nivel": "III-2", "camas": 1568, "distrito": "Jesus Maria", "lat": -12.0794, "lon": -77.0420},
+    {"id": "HOSP-002", "nombre": "Hospital Guillermo Almenara Irigoyen", "nivel": "IV", "camas": 1400, "distrito": "La Victoria", "lat": -12.0581, "lon": -77.0175},
+    {"id": "HOSP-003", "nombre": "Hospital Alberto Sabogal Sologuren", "nivel": "III-2", "camas": 650, "distrito": "Bellavista", "lat": -12.0530, "lon": -77.1142},
+    {"id": "HOSP-004", "nombre": "Hospital Jorge Voto Bernales", "nivel": "III-1", "camas": 450, "distrito": "Santa Anita", "lat": -12.0450, "lon": -76.9750},
+    {"id": "HOSP-005", "nombre": "Hospital Uldarico Rocca Fernandez", "nivel": "III-1", "camas": 380, "distrito": "Villa El Salvador", "lat": -12.2120, "lon": -76.9450},
+    {"id": "POLI-001", "nombre": "Policlinico Pablo Bermudez", "nivel": "II", "camas": 45, "distrito": "Jesus Maria", "lat": -12.0834, "lon": -77.0456},
+    {"id": "POLI-002", "nombre": "Policlinico Santa Cruz", "nivel": "II", "camas": 30, "distrito": "Miraflores", "lat": -18.1167, "lon": -77.0321}
+  ]
+}
