@@ -1,8 +1,13 @@
 import pandas as pd
+import os
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
-# 1. Configurar la conexión (¡AQUÍ PEGARÁS TU LLAVE MAESTRA!)
-MONGO_URI = "mongodb+srv://jortiz260590_db_user:2iWMA7mX9UVjA2rv@cluster0.eznmg3v.mongodb.net/?appName=Cluster0"
+# Cargar las variables del archivo .env
+load_dotenv()
+
+# 1. Leer la conexión desde el .env (ya no está escrita en el código)
+MONGO_URI = os.getenv("MONGO_URI")
 
 def subir_a_mongodb():
     print("Iniciando proceso de carga a MongoDB Atlas...")
