@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Datos generados - NO subir a GitHub (se regeneran con el script)
+data/raw/*.csv
+data/bronze/
+data/silver/
+data/gold/
