@@ -7,7 +7,8 @@ os.environ["PATH"] = os.environ["PATH"] + r";C:\hadoop\bin"
 # ---------------------------------------------------
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, trim, concat, lit, lpad, avg, substring
+from pyspark.sql.functions import (col, count, trim, concat, lit, lpad, avg,
+                                   month, year, when, to_date, weekofyear)
 
 # ============================================================
 #  RUTAS DE CADA CAPA DE LA ARQUITECTURA MEDALLION (Grupo 3)
@@ -19,6 +20,24 @@ RUTA_BRONCE = "data/bronze/atenciones"
 RUTA_PLATA  = "data/silver/atenciones"
 RUTA_ORO    = "data/gold/demanda_diaria"
 
+def clave_semana_iso(fecha, num_semana):
+    """
+    Construye la clave de semana epidemiologica AAAA-Www usando el ANIO ISO 8601,
+    no el anio del calendario.
+
+    Motivo (norma ISO 8601 / semanas epidemiologicas CDC): los primeros dias de
+    enero pueden pertenecer a la semana 52 del anio anterior, y los ultimos de
+    diciembre a la semana 1 del siguiente. Concatenar year(fecha) con el numero
+    de semana genera claves colisionadas: 2022-01-01 y 2022-12-28 recibian ambas
+    la clave "2022-W52", lo que volvia el JOIN no determinista.
+    """
+    anio_iso = (
+        when((month(fecha) == 1) & (num_semana >= 52), year(fecha) - 1)
+        .when((month(fecha) == 12) & (num_semana == 1), year(fecha) + 1)
+        .otherwise(year(fecha))
+    )
+    return concat(anio_iso.cast("string"), lit("-W"),
+                  lpad(num_semana.cast("string"), 2, "0"))
 
 def iniciar_spark():
     return SparkSession.builder \
@@ -52,7 +71,8 @@ def capa_plata(spark):
     """
     CAPA PLATA: limpieza, estandarizacion y JOIN de fuentes.
     - Limpia atenciones (sin nulos, sin duplicados)
-    - Integra epidemiologia (casos de dengue) por semana
+    - Estandariza la clave de semana epidemiologica (ISO 8601)
+    - Integra epidemiologia (dengue / influenza MINSA) por semana
     """
     print("\n--- CAPA PLATA: limpiando e integrando fuentes (JOIN) ---")
     df = spark.read.parquet(RUTA_BRONCE)
@@ -66,24 +86,40 @@ def capa_plata(spark):
           .withColumn("establecimiento_nombre", trim(col("establecimiento_nombre")))
     )
 
-    # 2. Crear la clave "semana" (formato 2022-W11) para poder unir
+    # 2. Estandarizar la clave de semana (ISO 8601)
     df_limpio = df_limpio.withColumn(
         "semana",
-        concat(
-            substring(col("fecha_atencion"), 1, 4), lit("-W"),
-            lpad(col("semana_epidemiologica").cast("string"), 2, "0")
-        )
+        clave_semana_iso(col("fecha_atencion"), col("semana_epidemiologica"))
     )
 
-    # 3. Preparar epidemiologia: 1 fila por semana, solo casos (sin columnas repetidas)
-    epi_sub = (df_epi.select("semana", "casos_dengue", "casos_influenza")
-               .dropDuplicates(["semana"]))
+    # 3. Epidemiologia: recalcular la clave desde la FECHA real del boletin
+    epi_fix = (
+        df_epi.withColumn("fecha", to_date(col("fecha")))
+              .withColumn("semana", clave_semana_iso(col("fecha"),
+                                                     weekofyear(col("fecha"))))
+    )
 
-    # 4. JOIN: unir atenciones con los casos de dengue/influenza por semana
+    # 3b. CONTROL DE CALIDAD: la clave debe ser unica o el JOIN no es determinista
+    total_epi = epi_fix.count()
+    claves_epi = epi_fix.select("semana").distinct().count()
+    print(f"   Epidemio: {total_epi} filas / {claves_epi} claves unicas")
+    if total_epi != claves_epi:
+        raise ValueError(
+            "Claves de semana duplicadas en epidemiologia: el JOIN no seria "
+            "determinista. Revisar data/bronze/epidemio."
+        )
+
+    epi_sub = epi_fix.select("semana", "casos_dengue", "casos_influenza")
+
+    # 4. JOIN: atenciones + casos MINSA por semana epidemiologica
     df_plata = df_limpio.join(epi_sub, on="semana", how="left")
 
-    print(f"   Registros tras limpieza + JOIN: {df_plata.count():,}")
-    print("   Fuentes integradas: atenciones (con clima) + epidemiologia (dengue)")
+    total = df_plata.count()
+    nulos = df_plata.filter(col("casos_dengue").isNull()).count()
+    print(f"   Registros tras limpieza + JOIN: {total:,}")
+    print(f"   Nulos en casos_dengue: {nulos:,} "
+          f"(semanas fuera del rango del boletin MINSA)")
+    print("   Fuentes integradas: atenciones (con clima) + epidemiologia (MINSA)")
 
     df_plata.write.mode("overwrite").parquet(RUTA_PLATA)
     print(f"   -> Plata guardada en: {RUTA_PLATA}")
