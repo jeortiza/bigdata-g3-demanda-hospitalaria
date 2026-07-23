@@ -187,15 +187,42 @@ def generar_epidemiologia_semanal(df_clima):
     return pd.DataFrame(filas), casos_por_semana
 
 
-def generar_oferta():
-    print("Generando archivo de oferta hospitalaria...")
+def generar_oferta(df_atenciones):
+    """
+    Oferta hospitalaria CALIBRADA contra la demanda real observada.
+
+    Antes: consultas_programadas = random.randint(1500, 2200), un rango fijo
+    sin relacion con el volumen de atenciones. Como la demanda real es de
+    ~1,068 atenciones por establecimiento y semana, la capacidad programada
+    resultaba SIEMPRE superior a la demanda (brecha negativa en el 100% de
+    los casos), lo que contradice la premisa del proyecto.
+
+    Ahora: la capacidad programada cubre entre el 70% y el 90% de la demanda
+    real de esa semana y establecimiento. La brecha resultante es positiva y
+    representa el deficit de oferta que el proyecto busca cuantificar.
+    """
+    print("Generando archivo de oferta hospitalaria (calibrada a la demanda)...")
+
+    # Demanda real por semana ISO y establecimiento
+    tmp = df_atenciones[["establecimiento_id"]].copy()
+    iso = pd.to_datetime(df_atenciones["fecha_atencion"]).dt.isocalendar()
+    tmp["_sem_iso"] = (iso["year"].astype(str) + "-W" +
+                       iso["week"].astype(str).str.zfill(2))
+    demanda = tmp.groupby(["_sem_iso", "establecimiento_id"]).size()
+
     filas = []
     fecha = FECHA_INICIO
     while fecha <= FECHA_FIN:
+        # El archivo conserva el formato de clave de la fuente original;
+        # la estandarizacion ISO se realiza en la capa Plata del ETL.
         semana = f"{fecha.year}-W{semana_epidemiologica(fecha):02d}"
+        anio_iso, sem_iso, _ = fecha.isocalendar()
+        clave_lookup = f"{anio_iso}-W{sem_iso:02d}"
+
         for est_id, (nombre, red, camas_tot) in ESTABLECIMIENTOS.items():
-            programadas = random.randint(1500, 2200)
-            ejecutadas  = int(programadas * random.uniform(0.85, 1.25))
+            demanda_real = int(demanda.get((clave_lookup, est_id), 0))
+            programadas = max(1, int(demanda_real * random.uniform(0.70, 0.90)))
+            ejecutadas  = int(programadas * random.uniform(0.95, 1.10))
             filas.append({
                 "semana":                semana,
                 "establecimiento_id":    est_id,
@@ -230,7 +257,7 @@ def main(num=500000):
     )
     df_atenciones = df_atenciones.drop(columns=["_semana"])
 
-    df_oferta = generar_oferta()
+    df_oferta = generar_oferta(df_atenciones)
 
     df_atenciones.to_csv("data/raw/atenciones_essalud.csv", index=False, encoding="utf-8-sig")
     df_clima.to_csv("data/raw/clima_lima_2022_2024.csv", index=False, encoding="utf-8-sig")
