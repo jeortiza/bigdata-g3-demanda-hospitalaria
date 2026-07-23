@@ -222,3 +222,4 @@ data/raw/*.csv
 data/bronze/
 data/silver/
 data/gold/
+spark-warehouse/
