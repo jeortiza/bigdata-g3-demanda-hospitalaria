@@ -2,7 +2,7 @@
 
 > **Título en español:** Pronóstico Multi-Horizonte de Demanda Hospitalaria en EsSalud mediante Big Data, Minería de Patrones Epidemiológicos y Machine Learning Ensemble: Un Marco de Analítica Predictiva para la Optimización de Recursos de Salud  
 > **Curso:** Big Data DD283 | Universidad Autónoma del Perú | 2026-1  
-> **Grupo:** 7 | **Sector:** Salud Pública / Healthcare Analytics / Gobierno
+> **Grupo:** 3 | **Sector:** Salud Pública / Healthcare Analytics / Gobierno
 
 ---
 
@@ -10,10 +10,11 @@
 
 | Nombre | GitHub | Rol |
 |--------|--------|-----|
-| [Apellido Nombre 1] | [@usuario1](https://github.com/usuario1) | Líder + Arquitectura de Datos |
-| [Apellido Nombre 2] | [@usuario2](https://github.com/usuario2) | Ingeniería de Datos (PySpark + ETL) |
-| [Apellido Nombre 3] | [@usuario3](https://github.com/usuario3) | ML Predictivo (Prophet + Ensemble) |
-| [Apellido Nombre 4] | [@usuario4](https://github.com/usuario4) | Dashboard Ejecutivo + Epidemiología |
+| Ortiz Andrade, Junior Emerzon | [@jeortiza](https://github.com/jeortiza) | Líder + Arquitectura de Datos |
+| Alanya Flores, Jesica Andrea | [@jalanyaf-boop](https://github.com/jalanyaf-boop) | Ingeniería de Datos (PySpark + ETL) |
+| Norabuena Ramirez, Wilder | [@Norabuena-030891](https://github.com/Norabuena-030891) | ML Predictivo (Prophet + Isolation Forest) |
+| Rivera Castillo, Omar | [@oriverac-design](https://github.com/oriverac-design) | Dashboard Ejecutivo (Streamlit) |
+| León Aguilar, Dalia Nancy | [@leondalar12-ux](https://github.com/leondalar12-ux) | Epidemiología + Calidad de Datos |
 
 ---
 
@@ -338,11 +339,11 @@ from sklearn.ensemble import IsolationForest
 | **S1** | Dataset 500K + EDA hospitales Lima | `01_EDA_atenciones.ipynb` | Distribución por especialidad, estacionalidad, análisis CIE-10 top 20 |
 | **S2** | Pipeline PySpark Medallion | `02_pipeline_medallion.ipynb` | Bronze→Silver→Gold; join 4 fuentes; CIE-10 normalizado; Parquet Gold |
 | **S3** | MongoDB Atlas + queries gerenciales | `03_mongodb_kpis.ipynb` | Series tiempo de ocupación, top 10 diagnósticos, alertas por establecimiento |
-| **S4** | **EP: Arquitectura + EDA + Correlación clima-enfermedad** | `presentacion_EP_grupo7.pdf` | 60% proyecto: lag analysis validado, correlaciones significativas p<0.05 |
+| **S4** | **EP: Arquitectura + EDA + Correlación clima-enfermedad** | `presentacion_EP_grupo3.pdf` | 60% proyecto: lag analysis validado, correlaciones significativas p<0.05 |
 | **S5** | Spark SQL + análisis epidemiológico | `04_spark_sql_epidemio.ipynb` | Patrones estacionales, semanas epidemiológicas, hotspots por distrito |
 | **S6** | Prophet + Isolation Forest | `05_forecasting_brotes.ipynb` | MAPE < 15% en 4 semanas; F1 > 0.75 en detección de brotes |
 | **S7** | Scraping MINSA + Great Expectations | `06_scraping_calidad.ipynb` | Datos MINSA integrados, 8 validaciones Great Expectations |
-| **S8** | **EF: Dashboard ejecutivo + resultados** | `presentacion_EF_grupo7.pdf` | Demo en vivo para "Director EsSalud", impacto cuantificado |
+| **S8** | **EF: Dashboard ejecutivo + resultados** | `presentacion_EF_grupo3.pdf` | Demo en vivo para "Director EsSalud", impacto cuantificado |
 
 ### Semana 4 — Evaluación Parcial EP (60% del proyecto)
 
@@ -371,7 +372,7 @@ Presentación de 25 minutos + demo interactiva para la **Gerencia Central de EsS
 ## 9. Estructura del Repositorio
 
 ```
-grupo7-demanda-hospitalaria-bd/
+bigdata-g3-demanda-hospitalaria/
 │
 ├── README.md                              ← guía completa del proyecto
 │
@@ -598,33 +599,73 @@ DIAGNOSTICOS_ESSALUD = {
 
 | Semana | Entregable | Responsable | Estado | Link PR |
 |--------|-----------|-------------|--------|---------|
-| S1 | Dataset 500K + EDA | [Nombre] | ⬜ Pendiente | — |
-| S2 | Pipeline Medallion | [Nombre] | ⬜ Pendiente | — |
-| S3 | MongoDB Atlas KPIs | [Nombre] | ⬜ Pendiente | — |
-| S4 | **Sustentación EP** | Todos | ⬜ Pendiente | — |
-| S5 | Spark SQL Epidemiología | [Nombre] | ⬜ Pendiente | — |
-| S6 | Prophet + Brotes | [Nombre] | ⬜ Pendiente | — |
-| S7 | Scraping + Calidad | [Nombre] | ⬜ Pendiente | — |
-| S8 | **Sustentación EF** | Todos | ⬜ Pendiente | — |
+| S1 | Dataset 500K + EDA | Alanya Flores | ✅ Completado | PR EP |
+| S2 | Pipeline Medallion | Ortiz Andrade | ✅ Completado | PR EP |
+| S3 | MongoDB Atlas KPIs | Norabuena Ramirez | ✅ Completado | PR EP |
+| S4 | **Sustentación EP** | Todos | ✅ Completado | PR #3 |
+| S5 | Spark SQL Epidemiología | León Aguilar | ✅ Completado | PR EF |
+| S6 | Prophet + Brotes | Norabuena Ramirez | ✅ Completado | PR #4 |
+| S7 | Scraping + Calidad | León Aguilar | ✅ Completado | PR #4 |
+| S8 | **Dashboard + Sustentación EF** | Rivera Castillo / Todos | ✅ Completado | PR #4 |
 
 ---
 
 ## 15. Checklist de Entrega Final (Semana 8)
 
 **Repositorio:**
-- [ ] README actualizado con resultados reales del grupo
-- [ ] Los 7 notebooks ejecutados con outputs visibles
-- [ ] `docs/arquitectura_demanda_hospitalaria.png` — diagrama final
-- [ ] `docs/presentacion_EF_semana8.pdf`
+- [x] README actualizado con resultados reales del grupo
+- [x] Los 7 notebooks ejecutados con outputs visibles
+- [x] `docs/arquitectura_demanda_hospitalaria.png` — diagrama final
+- [x] `docs/presentacion_EF_grupo3.pdf` · `docs/INFORME_BIG_DATA_Grupo3.pdf`
 
 **Resultados mínimos:**
-- [ ] 500K atenciones generadas con patrones estacionales realistas
-- [ ] Correlación clima-dengue validada estadísticamente (p-value < 0.05)
-- [ ] Predicción Prophet con MAPE < 15% para al menos 3 especialidades
-- [ ] Al menos 5 semanas de brote correctamente identificadas (Isolation Forest)
-- [ ] Dashboard con mínimo 7 KPIs hospitalarios funcionales
-- [ ] Mapa Lima con demanda proyectada por establecimiento
-- [ ] Abstract paper Scopus redactado (250 palabras, inglés)
+- [x] 500K atenciones generadas con patrones estacionales realistas
+- [x] Correlación clima-dengue validada estadísticamente (temperatura–dengue r = 0.90, p < 0.05)
+- [x] Predicción Prophet con MAPE < 15% para al menos 3 especialidades (**4 de 4**: 3.6% / 3.8% / 3.8% / 12.5%)
+- [x] Al menos 5 semanas de brote correctamente identificadas (Isolation Forest: **6 brotes**)
+- [x] Dashboard con mínimo 7 KPIs hospitalarios funcionales (**8 KPIs** calculados)
+- [x] Mapa Lima con demanda proyectada por establecimiento (3 hospitales geolocalizados)
+- [x] Abstract paper Scopus redactado (250 palabras, inglés) — `docs/abstract_scopus_grupo3.md`
+
+---
+
+## 16. Resultados Obtenidos (Grupo 3)
+
+### Forecasting (Prophet, validación cruzada 12 cortes, horizonte 4 semanas)
+
+| Especialidad | MAPE | Meta < 15% |
+|--------------|------|------------|
+| Medicina Interna | 3.6% | ✅ |
+| Traumatología | 3.8% | ✅ |
+| Cardiología | 3.8% | ✅ |
+| Emergencia | 12.5% | ✅ |
+
+Configuración adoptada: estacionalidad multiplicativa, 4 regresores exógenos (temperatura rezagada, dengue rezagado, inicio escolar, feriado largo). Serie semanal de 156 semanas (155 tras rezagos).
+
+### Detección de brotes (Isolation Forest)
+
+- **6 brotes** de dengue identificados (meta: ≥ 5). Umbral de etiqueta: media + 1.5 sd.
+- Se documenta el límite estructural entre un detector no supervisado (anomalía multivariada) y una etiqueta de umbral univariado.
+
+### Calidad de datos (Great Expectations 0.18.15)
+
+- **8 de 8 validaciones** superadas sobre 500,000 registros de la capa Plata.
+- Incluye verificación independiente de integridad de la clave de semana ISO 8601 (0 discrepancias).
+
+### Validación externa (CDC/RENACE — vigilancia real de dengue, Lima)
+
+- 119,537 casos reales notificados (2022–2024) contrastados contra la serie sintética.
+- El generador reproduce la correlación clima–dengue (r = 0.90) pero **no** la dinámica epidémica real: crecimiento interanual de **94×** (real) frente a **1.07×** (sintético). Limitación documentada.
+
+### Dashboard ejecutivo (Streamlit)
+
+- **8 KPIs** de gestión hospitalaria (README §7.4).
+- **3 vistas** gerenciales: Director (predicción vs actual + alertas), Gerente de Red (mapa de Lima con demanda por establecimiento), Epidemiólogo (correlación clima-enfermedad + vigilancia real vs sintética).
+- Ejecución local: `streamlit run src/dashboard.py`.
+
+### Hallazgo transversal — V de Veracidad (README §2)
+
+Se identificaron **cinco campos** con el mismo nombre pero significado divergente entre el HIS y las fuentes especializadas (temperatura, dengue, base de la tasa de ocupación, camas y dotación médica). En cada caso se cuantificó el impacto. No es un defecto del pipeline sino una propiedad del dataset, verificada y documentada.
 
 ---
 
