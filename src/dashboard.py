@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
+import plotly.express as px
 
 st.set_page_config(
     page_title="Demanda Hospitalaria EsSalud — Grupo 3",
@@ -129,16 +130,13 @@ elif vista.startswith("👔"):
         st.success("Sin alertas: demanda proyectada en rango normal.")
 
 # ============================================================
-#  VISTA: GERENTE DE RED — MAPA DE LIMA
+#  VISTA: GERENTE DE RED — MAPA DE LIMA (Plotly)
 # ============================================================
 elif vista.startswith("🗺️"):
     st.title("🗺️ Gerente de Red Asistencial")
     st.caption("Demanda proyectada por establecimiento y redistribución "
                "recomendada de recursos. Coordenadas reales de los "
                "hospitales de EsSalud en Lima.")
-
-    import folium
-    from streamlit_folium import st_folium
 
     v2 = cargar("vista2_mapa.parquet")
 
@@ -158,30 +156,29 @@ elif vista.startswith("🗺️"):
     st.divider()
     c_map, c_info = st.columns([2, 1])
 
-    # --- Mapa Folium ---
+    # --- Mapa Plotly (con respaldo si falla) ---
     with c_map:
-        centro = [float(v2["lat"].mean()), float(v2["lon"].mean())]
-        m = folium.Map(location=centro, zoom_start=12, tiles="CartoDB positron")
-
-        col_nivel = {"ALTA": "red", "MEDIA": "orange", "HOLGADA": "green"}
-        max_dem = float(v2["demanda_predicha"].max())
-        for _, est in v2.iterrows():
-            radio = 8 + (float(est["demanda_predicha"]) / max_dem) * 22
-            texto = (f"{est['establecimiento']} | "
-                     f"Demanda: {est['demanda_predicha']:,.0f} | "
-                     f"Brecha: {est['brecha']:+,.0f} | "
-                     f"Presion: {est['nivel_presion']}")
-            folium.CircleMarker(
-                location=[float(est["lat"]), float(est["lon"])],
-                radius=radio,
-                color=col_nivel.get(est["nivel_presion"], "gray"),
-                fill=True,
-                fill_color=col_nivel.get(est["nivel_presion"], "gray"),
-                fill_opacity=0.6,
-                tooltip=texto,
-            ).add_to(m)
-
-        st_folium(m, width=700, height=450, returned_objects=[])
+        try:
+            mapa = v2.copy()
+            mapa["etiqueta"] = mapa["establecimiento"].str.replace("Hospital ", "")
+            fig_map = px.scatter_mapbox(
+                mapa, lat="lat", lon="lon",
+                size="demanda_predicha", color="nivel_presion",
+                color_discrete_map={"ALTA": "#d62728", "MEDIA": "#ff7f0e",
+                                    "HOLGADA": "#2ca02c"},
+                hover_name="establecimiento",
+                hover_data={"lat": False, "lon": False,
+                            "demanda_predicha": ":,.0f", "brecha": ":+,.0f"},
+                text="etiqueta", size_max=35, zoom=11)
+            fig_map.update_layout(mapbox_style="carto-positron", height=450,
+                                  margin=dict(t=0, b=0, l=0, r=0),
+                                  legend=dict(title="Presión", orientation="h",
+                                              yanchor="bottom", y=1.02))
+            fig_map.update_traces(textposition="top center")
+            st.plotly_chart(fig_map, use_container_width=True)
+        except Exception as e:
+            st.warning(f"Mapa no disponible ({type(e).__name__}). "
+                       "Se muestra el detalle en la tabla inferior.")
 
     # --- Panel de redistribucion ---
     with c_info:
@@ -191,9 +188,6 @@ elif vista.startswith("🗺️"):
                      else "🟡" if est["nivel_presion"] == "MEDIA" else "🟢")
             st.markdown(f"**{icono} {est['establecimiento'].replace('Hospital ','')}**")
             st.caption(f"{est['recomendacion']}")
-        st.divider()
-        st.caption("El tamaño del círculo representa la demanda proyectada; "
-                   "el color, el nivel de presión sobre la oferta.")
 
     st.markdown("##### Detalle por establecimiento")
     st.dataframe(
@@ -206,4 +200,71 @@ elif vista.startswith("🗺️"):
 # ============================================================
 elif vista.startswith("🦟"):
     st.title("🦟 Vigilancia Epidemiológica")
-    st.info("Correlación clima-enfermedad y vigilancia — en construcción.")
+    st.caption("Correlación clima-enfermedad y contraste del generador "
+               "sintético contra la vigilancia real del CDC/RENACE (Lima).")
+
+    corr = cargar("vista3_correlacion.parquet")
+    series = cargar("vista3_series_dengue.parquet")
+    comp = cargar("vista3_comparativo_anual.parquet")
+
+    # --- A. Matriz de correlacion clima-enfermedad ---
+    st.subheader("Correlación clima-enfermedad")
+    st.caption("Valida las hipótesis H1 (temperatura↑ → dengue↑) y H2 "
+               "(estacionalidad inversa dengue/influenza) del README §7.1.")
+
+    fig_corr = px.imshow(
+        corr, text_auto=".2f", aspect="auto",
+        color_continuous_scale="RdBu_r", zmin=-1, zmax=1)
+    fig_corr.update_layout(height=380, margin=dict(t=20, b=20))
+    st.plotly_chart(fig_corr, use_container_width=True)
+
+    c1, c2 = st.columns(2)
+    if "temperatura_max" in corr.columns and "casos_dengue" in corr.columns:
+        c1.metric("Temperatura ↔ Dengue",
+                  f"{corr.loc['temperatura_max','casos_dengue']:+.3f}",
+                  "correlación positiva fuerte")
+    if "temperatura_max" in corr.columns and "casos_influenza" in corr.columns:
+        c2.metric("Temperatura ↔ Influenza",
+                  f"{corr.loc['temperatura_max','casos_influenza']:+.3f}",
+                  "correlación negativa", delta_color="inverse")
+
+    st.divider()
+
+    # --- B. Serie real vs sintetica ---
+    st.subheader("Vigilancia real vs generador sintético")
+    st.caption("Casos de dengue en Lima 2022–2024: vigilancia CDC/RENACE "
+               "(real) frente a la serie del proyecto (sintética).")
+
+    fig_s = go.Figure()
+    fig_s.add_trace(go.Scatter(x=series["clave"], y=series["dengue_real"],
+                               mode="lines", name="Real (CDC/RENACE)",
+                               line=dict(color="crimson", width=2)))
+    fig_s.add_trace(go.Scatter(x=series["clave"], y=series["dengue_sintetico"],
+                               mode="lines", name="Sintético (proyecto)",
+                               line=dict(color="steelblue", width=2)))
+    fig_s.update_layout(height=380, xaxis_title="Semana epidemiológica",
+                        yaxis_title="Casos de dengue",
+                        hovermode="x unified", margin=dict(t=20, b=20),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    # menos etiquetas en el eje x
+    paso = max(1, len(series)//12)
+    fig_s.update_xaxes(tickmode="array",
+                       tickvals=list(series["clave"])[::paso])
+    st.plotly_chart(fig_s, use_container_width=True)
+
+    # --- C. Comparativo anual e insight ---
+    st.subheader("Dinámica interanual")
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.dataframe(comp, use_container_width=True, hide_index=True)
+    with c2:
+        crec_real = comp["real"].iloc[-1] / comp["real"].iloc[0]
+        crec_sint = comp["sintetico"].iloc[-1] / comp["sintetico"].iloc[0]
+        st.metric("Crecimiento real 2022→2024", f"{crec_real:.0f}×",
+                  "epidemia de dengue declarada")
+        st.metric("Crecimiento sintético 2022→2024", f"{crec_sint:.2f}×",
+                  "sin tendencia interanual", delta_color="off")
+        st.info("El generador reproduce la **relación** clima-dengue pero "
+                "no la **dinámica epidémica**. Confirma la limitación "
+                "declarada en el notebook 05: el modelo no anticipa un "
+                "brote nuevo.")
